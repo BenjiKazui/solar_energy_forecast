@@ -1,5 +1,6 @@
 import pandas as pd
 import pickle
+import pytz # for time zone handling
 
 
 def data_preprocessing():
@@ -26,6 +27,20 @@ def data_preprocessing():
     # shifting the index (time) of X by 10 minutes to match the index of y
     X["time"] = pd.to_datetime(X["time"], format="%Y%m%d:%H%M")
     X["time"] = X["time"] - pd.Timedelta(minutes=10)
+
+    print("TIMEZONE")
+    print(X["time"].dt.tz)
+
+    #is_dst = [True, False]
+
+    if X["time"].dt.tz is None:
+        X["time"] = X["time"].dt.tz_localize("Europe/Berlin", nonexistent="shift_forward", ambiguous=False)
+        print("Timezone after localization:", X["time"].dt.tz)
+        X["time"] = X["time"].dt.tz_convert("UTC")
+        print("Timezone after conversion to UTC:", X["time"].dt.tz)
+
+    print(X.index.duplicated().sum())
+
     #print("X\n", X)
 
     # take care of the big numbers XXXXX.XX that come from the wrongly interpreted dates in the energy_generated column from the original csv
