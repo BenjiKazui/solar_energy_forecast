@@ -1,7 +1,7 @@
 from src.step_03_data_preprocessing import data_preprocessing
 from src.step_04_feature_engineering import create_time_based_features, create_lag_features, create_sun_position_features, create_interaction_features, create_fourier_features
 
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error as mae
 import pandas as pd
@@ -18,17 +18,17 @@ pd.set_option("display.max_colwidth", None)  # Don't truncate cell content
 X, y = data_preprocessing()
 
 
-# no added features: MAE 144
-# only added time_based_features: MAE 165
-# only added sun_position_features: MAE 107
-# time + sun_position features: MAE 116
-# time + sun + lag: MAE 116
-# time + sun + lag + interaction: MAE 115
-# lag + interaction: MAE 134
-# only lag: MAE 135
-# only interaction: MAE 144
-# time + lag + interaction: MAE 149
-# lag + sun + interaction: MAE 106 -> 107 (n_estimators=50) -> 106 (n_estimators=120) -> 106 (n_estimators=200)
+# no added features: MAE 143
+# only added time_based_features: MAE 145
+# only added sun_position_features: MAE 
+# time + sun_position features: MAE 
+# time + sun + lag: MAE 
+# time + sun + lag + interaction: MAE 
+# lag + interaction: MAE 
+# only lag: MAE 
+# only interaction: MAE 
+# time + lag + interaction: MAE 
+# lag + sun + interaction: MAE 133 (n_neighbors=5) -> 131 (n_neighbors=10) -> 129 (n_neighbors=15) -> 129 (n_neighbors=20)
 
 
 #X = create_time_based_features(X)
@@ -64,7 +64,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_
 #print(y_test)
 
 # changing alpha doenst change the MAE a lot
-model_lr = RandomForestRegressor(n_estimators=100, random_state=42)
+model_lr = KNeighborsRegressor(n_neighbors=20)
 model_lr.fit(X_train, y_train)
 
 y_pred = model_lr.predict(X_test)
@@ -80,4 +80,4 @@ plt.plot(results["y_test"], label="y_test")
 plt.plot(results["y_pred"], label="y_pred")
 plt.show()
 
-#joblib.dump(model_lr, "C:/Users/Brudo/solar_energy_forecast/models/Random_Forest_regression_model.pkl")
+#joblib.dump(model_lr, "C:/Users/Brudo/solar_energy_forecast/models/knn_model.pkl")
