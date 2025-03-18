@@ -29,12 +29,10 @@ else:
 print(np.mean(shortwave_radiation))
 
 # convert unit of windspeed from km/h to m/s
-print(np.mean(wind_speed_10m))
 wind_speed_10m = [round(wind_speed / 3.6, 2) for wind_speed in wind_speed_10m]
-print(np.mean(wind_speed_10m))
 
 df = pd.DataFrame.from_dict({"time": time, "shortwave_radiation": shortwave_radiation, "temperature_2m": temperature_2m, "wind_speed_10m": wind_speed_10m})
-print("Generated df:\n", df)
+#print("Generated df:\n", df)
 
 with open("C:/Users/BRudo/solar_energy_forecast/data/raw data/forecasted_solar_data.pkl", "wb") as file:
     pickle.dump(df, file)

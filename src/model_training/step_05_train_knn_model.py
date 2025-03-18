@@ -2,8 +2,9 @@ from src.step_03_data_preprocessing import data_preprocessing
 from src.step_04_feature_engineering import create_time_based_features, create_lag_features, create_sun_position_features, create_interaction_features, create_fourier_features
 
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.metrics import mean_absolute_error as mae
+import numpy as np
 import pandas as pd
 import joblib
 
@@ -37,8 +38,6 @@ X = create_sun_position_features(X)
 X = create_interaction_features(X)
 
 
-
-
 #X[["solar_elevation", "solar_azimuth"]].to_csv("C:/Users/Brudo/Desktop/solar_parameters_quick_check.csv", index=False)
 
 #X.to_csv("C:/Users/Brudo/Desktop/all_parameters_quick_check.csv", index=True)
@@ -57,18 +56,21 @@ for col in X.columns:
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, shuffle=False)
 
-#print(X_train)
-#print(y_train)
+# do RandomizedSearchCV to find the best hyperparameters
+model = KNeighborsRegressor(n_neighbors=20)
+param_distributions = {"n_neighbors": np.arange(5, 30 ,2)}
+random_search = RandomizedSearchCV(model, param_distributions=param_distributions, n_iter=10, cv=3, scoring="neg_mean_absolute_error", n_jobs=-1, random_state=42)
+random_search.fit(X_train, y_train)
 
-#print(X_test)
-#print(y_test)
+# get the best model from the randomized search
+best_model = random_search.best_estimator_
 
-# changing alpha doenst change the MAE a lot
-model_lr = KNeighborsRegressor(n_neighbors=20)
-model_lr.fit(X_train, y_train)
+results = random_search.cv_results_
+results = pd.DataFrame(results)
+print(results)
 
-y_pred = model_lr.predict(X_test)
-print(y_pred)
+y_pred = best_model.predict(X_test)
+#print(y_pred)
 
 mae = mae(y_test, y_pred)
 print("MAE: ", mae)
@@ -80,4 +82,4 @@ plt.plot(results["y_test"], label="y_test")
 plt.plot(results["y_pred"], label="y_pred")
 plt.show()
 
-#joblib.dump(model_lr, "C:/Users/Brudo/solar_energy_forecast/models/knn_model.pkl")
+#joblib.dump(best_model, "C:/Users/Brudo/solar_energy_forecast/models/knn_model.pkl")

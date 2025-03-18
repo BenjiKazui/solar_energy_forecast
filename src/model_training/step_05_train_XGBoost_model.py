@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import cross_val_score, KFold
 import random
 import numpy as np
+import optuna
 
 pd.set_option("display.max_rows", None)  # Show all rows
 pd.set_option("display.max_columns", None)  # Show all columns
@@ -63,31 +64,35 @@ for col in X.columns:
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
 
-#print(X_train)
-#print(y_train)
 
-#print(X_test)
-#print(y_test)
 
-# changing alpha doenst change the MAE a lot
-model = xgb.XGBRegressor(
-    n_estimators=100,
-    learning_rate=0.1,
-    max_depth=6,
-    objective="reg:squarederror"
-)
+def objective(trial):
+    params = {
+        "n_estimators": trial.suggest_int("n_estimators", 50, 200),
+        "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3),
+        "max_depth": trial.suggest_int("max_depth", 3, 10),
+        "objective": "reg:squarederror"
+    }
 
-kf = KFold(n_splits=3, shuffle=False)
+    model = xgb.XGBRegressor(**params)
+    score = cross_val_score(model, X_train, y_train, cv=3, scoring="neg_mean_absolute_error")
+    score = -score.mean()
 
-mae_scorer = make_scorer(mae, greater_is_better=False)
-scores = cross_val_score(model, X_train, y_train, cv=kf, scoring=mae_scorer)
-print("Cross-validation R2-scores:", scores)
-print("Mean R2-score:", scores.mean())
+    return score
 
-model.fit(X_train, y_train)
+# minimize MAE
+study = optuna.create_study(direction="minimize")
+study.optimize(objective, n_trials=100)
 
-y_pred = model.predict(X_test)
-print(y_pred)
+print("Best parameters:\n", study.best_params)
+
+# Train model with the best found hyperparameters on the whole training set
+best_model = xgb.XGBRegressor(**study.best_params)
+best_model.fit(X_train, y_train)
+
+
+y_pred = best_model.predict(X_test)
+#print(y_pred)
 
 mae = mae(y_test, y_pred)
 print("MAE: ", mae)
@@ -99,4 +104,4 @@ plt.plot(results["y_test"], label="y_test")
 plt.plot(results["y_pred"], label="y_pred")
 plt.show()
 
-#joblib.dump(model, "C:/Users/Brudo/solar_energy_forecast/models/xgboost_model.pkl")
+#joblib.dump(best_model, "C:/Users/Brudo/solar_energy_forecast/models/xgboost_model.pkl")
