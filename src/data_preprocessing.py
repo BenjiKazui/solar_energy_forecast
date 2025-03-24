@@ -2,6 +2,42 @@ import pandas as pd
 import pickle
 import pytz # for time zone handling
 
+def data_preprocessing_2(hist_weather_data=None, hist_energy_data=None, future_weather_data=None):
+    hist_weather_data["time"] = pd.to_datetime(hist_weather_data["time"], format="%Y%m%d:%H%M")
+
+    # shifting the index (time) of X by 10 minutes to match the index of y
+    # Obviously just shifting the data by 10 minutes is not the best way to do it, but it's a first step
+    hist_weather_data["time"] = hist_weather_data["time"] - pd.Timedelta(minutes=10)
+
+    print("hist_weather_data:\n", hist_weather_data)
+
+
+    hist_energy_data = hist_energy_data.drop(columns=["timestamp", "version", "created"])
+    hist_energy_data = hist_energy_data.rename(columns={"datetime": "time", "value": "energy"})
+    hist_energy_data["time"] = pd.to_datetime(hist_energy_data["time"])
+
+    #import matplotlib.pyplot as plt
+    #fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    #axes[0].plot(hist_energy_data.index, hist_energy_data.energy)
+    #axes[0].set_title("before")
+
+    print("hist_energy_data:\n", hist_energy_data)
+
+    hist_energy_data = hist_energy_data[hist_energy_data["time"].isin(hist_weather_data["time"])]
+    hist_energy_data = hist_energy_data.reset_index(drop=True)
+
+    #axes[1].plot(hist_energy_data.index, hist_energy_data.energy)
+    #axes[1].set_title("after")
+
+    #plt.tight_layout()
+    #plt.show()
+
+    print("hist_energy_data:\n", hist_energy_data)
+
+    return hist_weather_data, hist_energy_data
+
+    #return X, y
+
 
 def data_preprocessing():
 
