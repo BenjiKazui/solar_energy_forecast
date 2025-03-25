@@ -196,6 +196,7 @@ def pull_historical_energy_data(save=False, save_path=None, start_year=None, end
 def pull_future_weather_data(save=False, save_path=None):
 
     # API URL
+    # GMT +0
     lat = "47.99"
     lon = "7.84"
     url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=shortwave_radiation&hourly=temperature_2m&hourly=wind_speed_10m"
@@ -222,7 +223,7 @@ def pull_future_weather_data(save=False, save_path=None):
     print(np.mean(shortwave_radiation))
 
     # convert unit of windspeed from km/h to m/s
-    #wind_speed_10m = [round(wind_speed / 3.6, 2) for wind_speed in wind_speed_10m]
+    wind_speed_10m = [round(wind_speed / 3.6, 2) for wind_speed in wind_speed_10m]
 
     df = pd.DataFrame.from_dict({"time": time, "shortwave_radiation": shortwave_radiation, "temperature_2m": temperature_2m, "wind_speed_10m": wind_speed_10m})
     #print("Generated df:\n", df)

@@ -125,6 +125,11 @@ def get_params(trial, param_list):
 
 
 def train_XGBoost(X, y, test_size, param_list, cv, scoring, n_trials, direction, save=False, save_path=None):
+    # drop time columns
+    X_time = X["time"]
+    X = X.drop(columns=["time"])
+    y = y.drop(columns=["time"])
+
     # split the data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, shuffle=False)
 
@@ -149,7 +154,9 @@ def train_XGBoost(X, y, test_size, param_list, cv, scoring, n_trials, direction,
     study = optuna.create_study(direction=direction)
     study.optimize(objective, n_trials=n_trials)
 
+    # Get the best_params for final_training of the model (another script, see final_training_prediction_evaluation)
     print("Best parameters:\n", study.best_params)
+    best_params = study.best_params
 
     # Train model with the best found hyperparameters on the whole training set
     best_model = xgb.XGBRegressor(**study.best_params)
@@ -170,4 +177,4 @@ def train_XGBoost(X, y, test_size, param_list, cv, scoring, n_trials, direction,
     if save == True and save_path != None:
         joblib.dump(best_model, "C:/Users/Brudo/solar_energy_forecast/models/xgboost_model.pkl")
 
-    return best_model, mae, cv_scores, study
+    return best_model, best_params, y_pred, mae, cv_scores, study, X_time

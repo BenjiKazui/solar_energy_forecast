@@ -48,13 +48,12 @@ def create_fourier_features(X):
 def create_features(df, feature_names):
     if "time_based" in feature_names:
         df = create_time_based_features(df)
-    elif "lag" in feature_names:
+    if "lag" in feature_names:
         df = create_lag_features(df)
-    elif "sun_position" in feature_names:
+    if "sun_position" in feature_names:
         df = create_sun_position_features(df)
-    elif "interaction" in feature_names:
+    if "interaction" in feature_names:
         df = create_interaction_features(df)
     else:
         raise ValueError("Unknown feature name, use 'time_based', 'lag', 'sun_position', or 'interaction'")
-    df = df.drop(columns=["time"])
     return df
