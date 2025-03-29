@@ -131,21 +131,25 @@ def train_XGBoost(X, y, test_size, param_list, cv, scoring, n_trials, direction,
     y = y.drop(columns=["time"])
 
     # split the data
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, shuffle=False)
-
+    if test_size > 0.0:
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, shuffle=False)
+    else:
+        X_train = X.copy()
+        y_train = y.copy()
+        X_test = None
+        y_test = None
     # keep track of cv-scores
     cv_scores = []
 
     # define objective function to optimize with optuna
     def objective(trial):
+
         params = get_params(trial, param_list)
-
-
         model = xgb.XGBRegressor(**params)
+
         score = cross_val_score(model, X_train, y_train, cv=cv, scoring=scoring)
         print("score: ", score)
         score = -score.mean()
-
         cv_scores.append(score)
 
         return score
@@ -162,19 +166,26 @@ def train_XGBoost(X, y, test_size, param_list, cv, scoring, n_trials, direction,
     best_model = xgb.XGBRegressor(**study.best_params)
     best_model.fit(X_train, y_train)
 
-    y_pred = best_model.predict(X_test)
+    if test_size > 0.0:
+        y_pred = best_model.predict(X_test)
 
-    mae = mean_absolute_error(y_test, y_pred)
-    print("MAE: ", mae)
+        mae = mean_absolute_error(y_test, y_pred)
+        print("MAE: ", mae)
 
-    results = pd.DataFrame(data={"y_test": y_test["energy"], "y_pred": y_pred.flatten()})
-    #print(results)
+        results = pd.DataFrame(data={"y_test": y_test["energy"], "y_pred": y_pred.flatten()})
+        #print(results)
 
-    plt.plot(results["y_test"], label="y_test")
-    plt.plot(results["y_pred"], label="y_pred")
-    plt.show()
+        plt.plot(results["y_test"], label="y_test")
+        plt.plot(results["y_pred"], label="y_pred")
+        plt.show()
     
-    if save == True and save_path != None:
-        joblib.dump(best_model, "C:/Users/Brudo/solar_energy_forecast/models/xgboost_model.pkl")
+        if save == True and save_path != None:
+            joblib.dump(best_model, "C:/Users/Brudo/solar_energy_forecast/models/xgboost_model.pkl")
 
-    return best_model, best_params, y_pred, mae, cv_scores, study, X_time
+        return best_model, best_params, y_pred, mae, cv_scores, study, X_time
+    
+    else:
+        if save == True and save_path != None:
+            joblib.dump(best_model, "C:/Users/Brudo/solar_energy_forecast/models/xgboost_model.pkl")
+
+        return best_model, best_params, cv_scores, study, X_time

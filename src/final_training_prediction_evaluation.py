@@ -1,10 +1,11 @@
 
 
 
-def train_predict_evaluate(X, y, X_2, model_type, best_params):
+def train_predict_evaluate(X, y, X_test, model_type, best_params):
+    import pandas as pd
     # drop time columns
-    X_2_time = X_2["time"]
-    X_2 = X_2.drop(columns=["time"])
+    X_test_time = X_test["time"]
+    X_test = X_test.drop(columns=["time"])
     X = X.drop(columns=["time"])
     y = y.drop(columns=["time"])
 
@@ -18,5 +19,6 @@ def train_predict_evaluate(X, y, X_2, model_type, best_params):
     else:
         print("Use 'xgboost', 'linear_regression', .. or ..")
     model.fit(X, y)
-    preds = model.predict(X_2)
-    return model, preds, X_2_time
+    preds = model.predict(X_test)
+    final_preds_df = pd.DataFrame(data={"time": X_test_time, "energy": preds})
+    return model, preds, X_test_time, final_preds_df
