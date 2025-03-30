@@ -5,6 +5,12 @@
 #from src.feature_engineering import create_features
 #from src.train_XGBoost_model import train_model
 
+# Using weather data from Freiburg im Breisgau (City in the state of Baden-Württemberg in Germany) and energy data from the entire state
+# of Baden-Württemberg to train models. Then use weater data from Freiburg im Breisgau from a different time period to let the models predict
+# the solar energy generation on. Finally evaluate their prediction using the solar energy generation for that time period of the entire
+# state of Baden-Württemberg. Meaning we use weather data from one location to predict the solar energy generation for an entire region,
+# which is not too great, but still an approximation that's worth looking into. 
+
 
 from src.data_pulling import pull_historical_weather_data, pull_historical_energy_data, pull_future_weather_data
 #from data_pulling import load_local_hist_weather_data, load_local_hist_energy_data, load_local_future_weather_data
@@ -80,15 +86,19 @@ X_test = create_features(X_test, ["time_based", "lag", "sun_position", "interact
 final_model, final_preds, X_test_time, final_preds_df = train_predict_evaluate(X, y, X_test, "xgboost", best_params)
 
 print("111 y_test:\n", y_test)
+print("111 y_test.mean:\n", y_test["energy"].mean())
 print("111 final_preds:\n", final_preds)
+print("111 final_preds.mean:\n", final_preds.mean())
 
 
 plot_vertically([y_test, final_preds_df], ["y_test", "preds"])
 
 mae_test = mean_absolute_error(y_test.drop(columns=["time"]), final_preds)
 
+print("mae_test:\n", mae_test)
 
-
+# 155.55967712402344
+# Getting different MAEs with every run -> FIX RANDOMNESS
 ### CLEAN UP
 ### Implement another model
 ### GET READY TO PUT GITHUB LINK TO PROJECT IN MY CURRICULUM VITAE

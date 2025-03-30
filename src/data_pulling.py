@@ -3,21 +3,25 @@ import pickle
 import json
 import pandas as pd
 import numpy as np
-import time
 from datetime import date, datetime, UTC
 from io import StringIO
 
 
 def pull_historical_weather_data(save=False, save_path=None, start_year=None, end_year=None):
+    """
+    Pulls historical weather data. Years of data range from 2005 to 2020.
+    Latitude and Longitude of Freiburg im Breisgau is being used.
+    Documentation: https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis/getting-started-pvgis/api-non-interactive-service_en
+    """
 
-    # API URL
+    # Latitude and Longitude of Freiburg im Breisgau
     lat = "47.99"
     lon = "7.84"
+    # API URL
     url = f"https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat={lat}&lon={lon}&startyear={str(start_year)}&endyear={str(end_year)}&outputformat=csv"
 
     # Fetch data
     response = requests.get(url)
-
     print("response code: ", response.status_code)
 
     # Check if the response is valid
@@ -26,40 +30,47 @@ def pull_historical_weather_data(save=False, save_path=None, start_year=None, en
             # Split the response into lines
             lines = response.text.split("\n")
 
-            header_metadata = []
-            data_lines = []
-            header_found = False
-            footer_metadata = []
-            data_cleaned = []
+            # Goal here: Get the column names and the actual data
             column_names = []
+            data_lines = []
 
+            # Loop over lines, if a line starts with "time" use the entries of that line for the column names
             for line in lines:
-                if line.startswith("time"):
-                    header_found = True
+                if line.startswith("time"):  # Header row found
                     column_names = line.strip().split(",")
-                    data_lines.append(line)
-                    continue
-                if not header_found:
-                    header_metadata.append(line)
-                else:
+                    continue  # Skip adding the header to data_lines
+                if column_names and not any(c.isalpha() for c in line.split(",")[:]):  
+                    # Only keep rows that don’t contain letters
                     data_lines.append(line)
 
-            for row in data_lines:
-                if any(c.isalpha() for c in row) and not row.startswith("time"):
-                    footer_metadata.append(row)
-                else:
-                    data_cleaned.append(row)
-
-            print("Extracted column_names: ", column_names)
-
-            csv_data = "\n".join(data_cleaned)
-            df = pd.read_csv(StringIO(csv_data), names=column_names, header=0)
-
+            if column_names is None:
+                raise ValueError("Header not found in response data.")
         except Exception as e:
             print("Error while parsing CSV:", str(e))
     else:
         print(f"Error {response.status_code}: {response.text}")
 
+    print("Extracted column_names: ", column_names)
+
+    # get data ready to be moved into a df by joining the data
+    csv_data = "\n".join(data_lines)
+    df = pd.read_csv(StringIO(csv_data), names=column_names, header=None)
+
+    # Remove footer metadata: Keep only rows where "time" is a valid timestamp
+    df = df[df["time"].str.match(r"^\d{8}:\d{4}$", na=False)]
+
+    # use datetime format for time column
+    df["time"] = pd.to_datetime(df["time"], errors="coerce", format="%Y%m%d:%H%M")
+    # use float64 format for G(i) column
+    df["G(i)"] = pd.to_numeric(df["G(i)"], errors="coerce")
+
+    # Get some more information on the data
+    #print("DFDFDF", df)
+    #print("dtypes\n", df.dtypes)
+    #print("df.describe", df.describe())
+    #print("NaNs\n", df.isna().sum())
+
+    # drop unwanted columns
     df.drop(columns=["H_sun", "Int"], inplace=True)
 
     if save == True:
@@ -67,15 +78,13 @@ def pull_historical_weather_data(save=False, save_path=None, start_year=None, en
         with open(save_path, "wb") as file:
             pickle.dump(df, file)
 
-    #df["time"] = pd.to_datetime(df["time"], format="%Y%m%d:%H%M")
-
     return df
 
 
 def date_to_milliseconds(date_string):
-    '''
-    Helper function to convert custom date (YYYY-MM-DD) to Unix timestamp in milliseconds
-    '''
+    """
+    Helper function to convert custom date (YYYY-MM-DD HH:MM:SS) to Unix timestamp in milliseconds
+    """
     #from datetime import datetime
     dt = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
     return int(dt.timestamp() * 1000)
@@ -83,15 +92,15 @@ def date_to_milliseconds(date_string):
 
 def get_available_timestamps(filter, region, resolution):
     """
-    Fetches available timestamps, which we can use after to fetch the actual data using these available timestamps
+    Fetches ALL available timestamps, which we will filter and then use to fetch the actual data
     """
     url = f"https://www.smard.de/app/chart_Data/{filter}/{region}/index_{resolution}.json"
 
     response = requests.get(url)
 
+    # Check for status code and get a list of the timestamps if status code is fine
     if response.status_code == 200:
         timestamps = response.json().get("timestamps", [])
-        print(f"Available timestamps: {timestamps}")
         return timestamps
     else:
         print(f"Failed to retrieve timestamps: {response.status_code}")
@@ -99,48 +108,35 @@ def get_available_timestamps(filter, region, resolution):
 
 
 def pull_historical_energy_data(save=False, save_path=None, start_year=None, end_year=None):
-    # https://github.com/bundesAPI/smard-api
-    # energy in MWh
+    """
+    In the SMARD API, each timestamp corresponds to the start of an available dataset.
+    Thus a single timestamp does not fetch a full time range — we need to collect data for multiple timestamps to cover a period.
 
+    So, to get the energy data from this API we first need to get certain timestamps through a request.
+    Once we have those timestamps we can use them in another request to get the actual data behind those timestamps.
+    Using the region 'TransnetBW', which spans over the state of Baden-Württemberg - the state where Freiburg im Breisgau is located.
+    Energy in MWh.
+    Documentation: https://github.com/bundesAPI/smard-api
+    """
 
-    #try:
-    #    start_year = str(start_year)
-    #    end_year = str(end_year)
-    #except:
-    #    pass
-
-    # Using a slightly expanded interval of time to look for timestamps that include the data we want. Expanding by using 1 past week before start_year and 1 week after end_year.
+    # Using a slightly expanded interval of time to look for timestamps that include the data we want.
+    # Expanding by using roughly 1 past week before start_year and roughly 1 week after end_year to make
+    # sure to get the entire interval of time we are interested in
     start_date = f"{start_year - 1}-12-24 00:00:00"
     end_date = f"{end_year + 1}-01-08 00:00:00"
 
-    #if test == True:
-    #    # Using a slightly expanded interval of time to look for timestamps that include the data we want. Expanding by using 1 past week before start_year and 1 week after end_year.
-    #    start_date = f"{start_year - 1}-12-24 00:00:00"
-    #    end_date = f"{end_year + 1}-01-08 00:00:00"
-    #elif test == False:
-    #    start_date = f"{start_year}-01-01 00:00:00"
-    #    end_date = f"{end_year}-12-31 23:00:00"
-    #else:
-    #    print("Use True or False for 'test' argument in pull_historical_energy_data. If test == True, the function is trying to fetch timestamps that better match our desired dates in regards to given start_year and end_year.")
-
-    # get timestamps for API call
-    current_time_seconds = time.time()
-    print(f"Current time in seconds since epoch: {current_time_seconds}")
-    current_time_milliseconds = int(current_time_seconds * 1000)
-    current_time_milliseconds = current_time_milliseconds - 1000000000
-    print(f"Current time in milliseconds since epoch: {current_time_milliseconds}")
-
     # API call: parameters
     filter = "4068" # code for energy generated by photovoltaics
-    filterCopy = filter
+    filterCopy = filter # must be specified according to the documentation
     region = "TransnetBW" # TSO for Baden-Württemberg (state) in Germany
-    regionCopy = region
-    resolution = "hour"
+    regionCopy = region # must be specified according to the documentation
+    resolution = "hour" # hourly resolution of the data
     
-    # Convert input dates to timestamps
+    # Convert input dates to timestamps, because we need timestamps in milliseconds for the API to get all available timestamps
     start_ts = date_to_milliseconds(start_date)
     end_ts = date_to_milliseconds(end_date)
-    print(f"Fetching data from {start_date} ({start_ts}) to {end_date} ({end_ts})...")
+    print(f"Fetching data from {start_date} ({start_ts}) to {end_date} ({end_ts})")
+    print(f"Which corresponds to {(end_ts - start_ts)/(3600*1000)} hours.")
 
     # Get all available timestamps
     available_timestamps = get_available_timestamps(filter=filter, region=region, resolution=resolution)
@@ -148,14 +144,14 @@ def pull_historical_energy_data(save=False, save_path=None, start_year=None, end
         print("Problem with retrieving available timestamps.")
         return None
     
+    # Filter all the pulled available timestamps to get only those matching our time interval of interest
     selected_timestamps = [ts for ts in available_timestamps if start_ts <= ts <= end_ts]
     if not selected_timestamps:
         print("No available timestamps in the given range.")
 
     print(f"Fetching data for {len(selected_timestamps)} timestamps.")
 
-    #In the SMARD API, each timestamp corresponds to the start of an available dataset.
-    #So, a single timestamp does not fetch a full time range — we need to collect data for multiple timestamps to cover a period.
+    # Finally fetch the actual data using the pulled and filtered timestamps
     all_data = []
     for timestamp in selected_timestamps:
         url = f"https://www.smard.de/app/chart_data/{filter}/{region}/{filterCopy}_{regionCopy}_{resolution}_{timestamp}.json"
@@ -167,7 +163,7 @@ def pull_historical_energy_data(save=False, save_path=None, start_year=None, end
         else:
             print(f"Failed to retrieve data for timestamp {timestamp}")
 
-    # Extracting the time-series data
+    # Extract the time-series data
     data_list = []
     for entry in all_data:
         metadata = entry.get("smeta_data", {})
@@ -190,19 +186,30 @@ def pull_historical_energy_data(save=False, save_path=None, start_year=None, end
 
     print(f"Given the start_date {start_date} and end_date {end_date} the available timestamps are ranging from {first_timestamp} to {last_timestamp}")
 
+    # The returned df (and all_data) includes data for the time interval of interest, but it also includes data outside of that time interval of interest
+    # Matching the data properly is done in the next step in the pipeline with functions from data_preprocessing.py
     return df, all_data
 
 
 def pull_future_weather_data(save=False, save_path=None):
+    """
+    Potentially we could also fetch a weather forecast and do predictions on that forecast.
+    Pros: It's cool to try
+    Cons: It's really hard to interpret and get good results i think, because you are predicting (energy) on another prediction (weather)
+          Weather Prediction could be bad, then so is the energy prediction
+          Also, for evaluating the prediction, we would need to wait for time to pass in order to see the actual energy generation for that time period
+          There is only roughly 14 days of weather predictions out there, and then those are actually not too accurate (I THINK), might need to look into it further
 
-    # API URL
+    Documentation: https://open-meteo.com/en/docs      
+    """
+
     # GMT +0
+    # Latitude/Longitude for Freiburg im Breisgau
     lat = "47.99"
     lon = "7.84"
     url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=shortwave_radiation&hourly=temperature_2m&hourly=wind_speed_10m"
 
     response = requests.get(url)
-    #print(response.status_code)
 
     data = json.loads(response.text)
 
@@ -210,7 +217,6 @@ def pull_future_weather_data(save=False, save_path=None):
         try:
             lat = data["latitude"]
             lon = data["longitude"]
-            timezone = data["timezone"]
             time = data["hourly"]["time"]
             temperature_2m = data["hourly"]["temperature_2m"]
             wind_speed_10m = data["hourly"]["wind_speed_10m"]
@@ -226,7 +232,6 @@ def pull_future_weather_data(save=False, save_path=None):
     wind_speed_10m = [round(wind_speed / 3.6, 2) for wind_speed in wind_speed_10m]
 
     df = pd.DataFrame.from_dict({"time": time, "shortwave_radiation": shortwave_radiation, "temperature_2m": temperature_2m, "wind_speed_10m": wind_speed_10m})
-    #print("Generated df:\n", df)
 
     if save == True:
         with open(save_path, "wb") as file:
@@ -235,7 +240,7 @@ def pull_future_weather_data(save=False, save_path=None):
     return df
 
 
-# Functions to load data from local machine
+# Functions to load pickle data from local machine
 def load_local_hist_weather_data(local_path):
     with open(local_path, "rb") as file:
         hist_weather_data = pickle.load(file)
@@ -250,32 +255,3 @@ def load_local_future_weather_data(local_path):
     with open(local_path, "rb") as file:
         future_weather_data = pickle.load(file)
     return future_weather_data
-
-
-# ALIGN data (timewise), maybe always pull_historical_weather_data for 1 more year in order to have a good proximity for 1 entire year using the available timestamps from pull_historical_energy_data
-
-# save_path = "C:/Users/BRudo/solar_energy_forecast/data/raw data/historical_solar_data.pkl"
-
-def pull_data(save=False, save_path=None, start_year=2020, end_year=2020):
-
-    start_date = date(start_year, 1, 1).strftime("%Y-%m-%d")
-    print(start_date)
-    # API from pull_historical_weather_data takes start_year = 2020 and end_year = 2020 to get all data from the year 2020
-    # API from pull_historical_energy_data takes start_year = 2020 and end_year = 2021 to get all data from the year 2020
-    # Thus we are using end_year + 1 to pull_historical_energy_data
-    end_date = date(end_year + 1, 1, 1).strftime("%Y-%m-%d")
-    print(end_date)
-
-    #quick_df = pd.DataFrame(hist_energy_data)
-    #quick_df.to_csv("C:/Users/Brudo/Desktop/quick_df_test.csv")
-
-    hist_weather_data = pull_historical_weather_data(save=save, save_path=save_path, start_year=start_year, end_year=end_year)
-    hist_energy_data, _ = pull_historical_energy_data(save=save, save_path=save_path, start_date=start_date, end_date=end_date)
-
-    print("hist_weather_data:\n", hist_weather_data)
-    print("hist_energy_data:\n", hist_energy_data)
-
-
-    return hist_weather_data, hist_energy_data
-
-#pull_data()
