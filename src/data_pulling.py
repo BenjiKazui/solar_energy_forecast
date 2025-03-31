@@ -203,7 +203,6 @@ def pull_future_weather_data(save=False, save_path=None):
     Documentation: https://open-meteo.com/en/docs      
     """
 
-    # GMT +0
     # Latitude/Longitude for Freiburg im Breisgau
     lat = "47.99"
     lon = "7.84"
@@ -233,7 +232,7 @@ def pull_future_weather_data(save=False, save_path=None):
 
     df = pd.DataFrame.from_dict({"time": time, "shortwave_radiation": shortwave_radiation, "temperature_2m": temperature_2m, "wind_speed_10m": wind_speed_10m})
 
-    if save == True:
+    if save == True and save_path is not None:
         with open(save_path, "wb") as file:
             pickle.dump(df, file)
 
@@ -241,17 +240,7 @@ def pull_future_weather_data(save=False, save_path=None):
 
 
 # Functions to load pickle data from local machine
-def load_local_hist_weather_data(local_path):
+def load_local_data(local_path):
     with open(local_path, "rb") as file:
-        hist_weather_data = pickle.load(file)
-    return hist_weather_data
-
-def load_local_hist_energy_data(local_path):
-    with open(local_path, "rb") as file:
-        hist_energy_data = pickle.load(file)
-    return hist_energy_data
-
-def load_local_future_weather_data(local_path):
-    with open(local_path, "rb") as file:
-        future_weather_data = pickle.load(file)
-    return future_weather_data
+        df = pickle.load(file)
+    return df

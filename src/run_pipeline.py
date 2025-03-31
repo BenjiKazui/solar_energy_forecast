@@ -1,20 +1,13 @@
-#import random
-#import numpy as np
-#from sklearn.model_selection import train_test_split
-#from src.data_preprocessing import data_preprocessing
-#from src.feature_engineering import create_features
-#from src.train_XGBoost_model import train_model
 
 # Using weather data from Freiburg im Breisgau (City in the state of Baden-Württemberg in Germany) and energy data from the entire state
-# of Baden-Württemberg to train models. Then use weater data from Freiburg im Breisgau from a different time period to let the models predict
+# of Baden-Württemberg to train models. Then use weather data from Freiburg im Breisgau from a different time period to let the models predict
 # the solar energy generation on. Finally evaluate their prediction using the solar energy generation for that time period of the entire
 # state of Baden-Württemberg. Meaning we use weather data from one location to predict the solar energy generation for an entire region,
 # which is not too great, but still an approximation that's worth looking into. 
 
 
-from src.data_pulling import pull_historical_weather_data, pull_historical_energy_data, pull_future_weather_data
-#from data_pulling import load_local_hist_weather_data, load_local_hist_energy_data, load_local_future_weather_data
-from src.data_preprocessing import data_preprocessing_2
+from src.data_pulling import pull_historical_weather_data, pull_historical_energy_data, pull_future_weather_data, load_local_data
+from src.data_preprocessing import data_preprocessing
 from src.feature_engineering import create_features
 from src.model_training.train_XGBoost_model import train_XGBoost
 from src.final_training_prediction_evaluation import train_predict_evaluate
@@ -23,25 +16,32 @@ from src.do_plotting import plot_vertically
 import random
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
+#import matplotlib.pyplot as plt
+#import matplotlib.dates as mdates
 from sklearn.metrics import mean_absolute_error
 
+# STEP 1: Fix seeds to ensure reproducability
 random.seed(42) # Fixes Python's built-in random module
 np.random.seed(42) # Fixes NumPy's random behavior
 
+# STEP 2: Get training data
+# Pull it from APIs:
 hist_weather_data = pull_historical_weather_data(save=False, save_path=None, start_year=2018, end_year=2019)
 hist_energy_data, _ = pull_historical_energy_data(save=False, save_path=None, start_year=2018, end_year=2019)
+# Or load it from local machine:
+#hist_weather_data = load_local_data(local_path="")
+#hist_energy_data = load_local_data(local_path="")
 
-#future_weather_data = pull_future_weather_data(save=False, save_path=None)
+# STEP 3: Get test data
+# Pull it from APIs:
 hist_weather_test_data = pull_historical_weather_data(save=False, save_path=None, start_year=2020, end_year=2020)
 hist_energy_test_data, _ = pull_historical_energy_data(save=False, save_path=None, start_year=2020, end_year=2020)
+# Or load it from local machine:
+#hist_weather_test_data = load_local_data(local_path="")
+#hist_energy_test_data = load_local_data(local_path="")
 
-#print("hist_weather_data: ", hist_weather_data)
-
-
-X, y = data_preprocessing_2(hist_weather_data, hist_energy_data)
-X_test, y_test = data_preprocessing_2(hist_weather_test_data, hist_energy_test_data)
+X, y = data_preprocessing(hist_weather_data, hist_energy_data)
+X_test, y_test = data_preprocessing(hist_weather_test_data, hist_energy_test_data)
 
 print("X_test:\n", X_test)
 print("y_test:\n", y_test)
@@ -50,7 +50,7 @@ X = create_features(X, ["time_based", "lag", "sun_position", "interaction"])
 
 param_list = [("n_estimators", "int", 50, 200), ("learning_rate", "float", 0.01, 0.3), ("max_depth", "int", 3, 10), ("objective", "fixed", "reg:squarederror")]
 
-best_model, best_params, cv_scores, study, X_time = train_XGBoost(X=X, y=y, test_size=0.0, param_list=param_list, cv=3, scoring="neg_mean_absolute_error", n_trials=2, direction="minimize", save=False, save_path=None)
+best_model, best_params, cv_scores, study, X_time = train_XGBoost(X=X, y=y, param_list=param_list, cv=3, scoring="neg_mean_absolute_error", n_trials=2, direction="minimize", save=False, save_path=None)
 
 print("cv_scores: ", cv_scores)
 
