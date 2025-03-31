@@ -46,20 +46,7 @@ X_test, y_test = data_preprocessing_2(hist_weather_test_data, hist_energy_test_d
 print("X_test:\n", X_test)
 print("y_test:\n", y_test)
 
-#y_test = y_test.drop(columns=["time"])
-
-# check for NaNs/missing values in X and y
-#print(X.describe())
-#print(y.describe())
-#X_nan_counts = X.isna().sum()
-#y_nan_counts = y.isna().sum()
-#print("X_nan_counts: ", X_nan_counts)
-#print("y_nan_counts: ", y_nan_counts)
-
 X = create_features(X, ["time_based", "lag", "sun_position", "interaction"])
-
-#print("X after feature creation\n", X)
-#print("X.describe()\n", X.describe())
 
 param_list = [("n_estimators", "int", 50, 200), ("learning_rate", "float", 0.01, 0.3), ("max_depth", "int", 3, 10), ("objective", "fixed", "reg:squarederror")]
 
@@ -67,22 +54,11 @@ best_model, best_params, cv_scores, study, X_time = train_XGBoost(X=X, y=y, test
 
 print("cv_scores: ", cv_scores)
 
-###
-#print(future_weather_data.describe())
-#future_weather_data = future_weather_data.rename(columns={"shortwave_radiation": "G(i)", "temperature_2m": "T2m", "wind_speed_10m": "WS10m"})
-#future_weather_data.drop(columns=["time"], inplace=True)
-#print("future_weather_data:\n", future_weather_data)
-#X_2 = future_weather_data.copy()
-###
-
 X_test["time"] = pd.to_datetime(X_test["time"])
 
 X_test = create_features(X_test, ["time_based", "lag", "sun_position", "interaction"])
 
-#print("X_2\n", X_test)
-#print(X_test.dtypes)
-
-# I only need this if test_size > 0.0 in "train_XGBoost" to train on the entire trainings data
+# I only need this if test_size > 0.0 in "train_XGBoost" to train on the entire training data
 final_model, final_preds, X_test_time, final_preds_df = train_predict_evaluate(X, y, X_test, "xgboost", best_params)
 
 print("111 y_test:\n", y_test)
@@ -97,34 +73,18 @@ mae_test = mean_absolute_error(y_test.drop(columns=["time"]), final_preds)
 
 print("mae_test:\n", mae_test)
 
+# 156.1685791015625
+# 154.84197998046875
+# 159.86949157714844
+# 156.22654724121094
+# 155.06646728515625
 # 155.55967712402344
-# Getting different MAEs with every run -> FIX RANDOMNESS
+
 ### CLEAN UP
 ### Implement another model
 ### GET READY TO PUT GITHUB LINK TO PROJECT IN MY CURRICULUM VITAE
 
 
-
-
-
-#print("final_preds:\n", final_preds)
-
-#print("X_time:\n", X_time)
-#print("X_test_time:\n", X_test_time)
-
-#y = y.drop(columns="time")
-#print(y)
-#print(final_preds)
-#print(X_time)
-#print(X_test_time)
-
-#print(y.shape, X_time.shape)
-#print(final_preds.shape, X_test_time.shape)
-#y_time = pd.DataFrame(data=y["energy"], index=y["time"], columns=["energy"])
-#final_preds_time = pd.DataFrame(data=final_preds, index=X_2_time, columns=["predicted"])
-
-#print("y_time:\n", y)
-#print("final_preds:\n", final_preds)
 
 
 
@@ -135,10 +95,6 @@ print("mae_test:\n", mae_test)
 ### implement using final_preds and y together
 
 
-#plot_chronological(y, final_preds, X_2_time)
-
-# plot x-axis datetime (make sure to handle the leap year)
-# plot y-axis the actual data y and the prediction, use different color for each year
 
 #print(X_2.describe())
 # NEXT TO DO: implement feature_engineering and training of a model in the pipeline

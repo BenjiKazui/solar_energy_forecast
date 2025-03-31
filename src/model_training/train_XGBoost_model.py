@@ -145,9 +145,9 @@ def train_XGBoost(X, y, test_size, param_list, cv, scoring, n_trials, direction,
     def objective(trial):
 
         params = get_params(trial, param_list)
-        model = xgb.XGBRegressor(**params)
+        model = xgb.XGBRegressor(**params, random_state=42)
 
-        score = cross_val_score(model, X_train, y_train, cv=cv, scoring=scoring)
+        score = cross_val_score(model, X_train, y_train, cv=cv, scoring=scoring, n_jobs=-1)
         print("score: ", score)
         score = -score.mean()
         cv_scores.append(score)
@@ -155,7 +155,7 @@ def train_XGBoost(X, y, test_size, param_list, cv, scoring, n_trials, direction,
         return score
 
     # minimize MAE
-    study = optuna.create_study(direction=direction)
+    study = optuna.create_study(direction=direction, sampler=optuna.samplers.TPESampler(seed=42))
     study.optimize(objective, n_trials=n_trials)
 
     # Get the best_params for final_training of the model (another script, see final_training_prediction_evaluation)
@@ -163,7 +163,7 @@ def train_XGBoost(X, y, test_size, param_list, cv, scoring, n_trials, direction,
     best_params = study.best_params
 
     # Train model with the best found hyperparameters on the whole training set
-    best_model = xgb.XGBRegressor(**study.best_params)
+    best_model = xgb.XGBRegressor(**study.best_params, random_state=42)
     best_model.fit(X_train, y_train)
 
     if test_size > 0.0:

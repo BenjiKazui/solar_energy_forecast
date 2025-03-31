@@ -11,7 +11,7 @@ def train_predict_evaluate(X, y, X_test, model_type, best_params):
 
     if model_type == "xgboost":
         from xgboost import XGBRegressor
-        model = XGBRegressor(**best_params)
+        model = XGBRegressor(**best_params, random_state=42)
     # implement the other models
     if model_type == "linear_regression":
         from sklearn.linear_model import LinearRegression
