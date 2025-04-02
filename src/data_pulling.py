@@ -109,7 +109,7 @@ def get_available_timestamps(filter, region, resolution):
 
 def pull_historical_energy_data(save=False, save_path=None, start_year=None, end_year=None):
     """
-    In the SMARD API, each timestamp corresponds to the start of an available dataset.
+    In the SMARD API each timestamp corresponds to the start of an available dataset.
     Thus a single timestamp does not fetch a full time range — we need to collect data for multiple timestamps to cover a period.
 
     So, to get the energy data from this API we first need to get certain timestamps through a request.
