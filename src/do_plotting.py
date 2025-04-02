@@ -21,7 +21,7 @@ def plot_chronological(y, final_preds_df):
     plt.show()
 
 
-def help_plot_vertically(ax, z, z_label):
+def help_plot_vertically(ax, z, z_label, window_size):
     unique_years = z["time"].dt.year.unique()
 
     for year in unique_years:
@@ -31,8 +31,13 @@ def help_plot_vertically(ax, z, z_label):
         # Use only energy data that has values != 0
         #yearly_data = yearly_data[yearly_data["energy"] != 0]
 
-        # use a rolling mean with window size of 24 (24h = 1 day)
-        yearly_data["rolling_24h"] = yearly_data["energy"].rolling(window=24*30, min_periods=1).mean()
+        # use a rolling mean with window size of 24*30 = 24h * 30 days = 1 Month
+        if "energy" in z.columns:
+            yearly_data["rolling_24h"] = yearly_data["energy"].rolling(window=window_size, min_periods=1).mean()
+        elif "energy predictions" in z.columns:
+            yearly_data["rolling_24h"] = yearly_data["energy predictions"].rolling(window=window_size, min_periods=1).mean()
+        else:
+            print("Couldn't find column 'energy' or 'energy predictions'")
 
         # Normalize the x-axis to only show months (ignore year)
         month_only = yearly_data["time"].dt.strftime("%m-%d")  # Format as 'MM-DD'
@@ -41,7 +46,7 @@ def help_plot_vertically(ax, z, z_label):
         ax.scatter(month_only, yearly_data["rolling_24h"], label=f"{z_label} {year}", s=1)#, alpha=0.7, edgecolors="k")
         #ax.plot(month_only, yearly_data["energy"], label=f"{year}", linewidth=0.2, alpha=0.8)#, alpha=0.7, edgecolors="k")
 
-def plot_vertically(data_list, label_list):
+def plot_vertically(data_list, label_list, window_size):
 
     if len(data_list) != len(label_list):
         print("Provide data_list and label_list with the corresponding data and labels, data_list and label_list must be same length.")
@@ -50,7 +55,7 @@ def plot_vertically(data_list, label_list):
     fig, ax = plt.subplots()
 
     for i, data in enumerate(data_list):
-        help_plot_vertically(ax, data, label_list[i])
+        help_plot_vertically(ax, data, label_list[i], window_size)
 
     # Set x-axis format to show months only
     ax.set_xticks(["01-01", "02-01", "03-01", "04-01", "05-01", "06-01",

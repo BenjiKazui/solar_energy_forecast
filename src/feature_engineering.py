@@ -27,14 +27,10 @@ def create_sun_position_features(X):
     X["solar_elevation"] = solar_pos["elevation"]
     X["solar_azimuth"] = solar_pos["azimuth"]
 
-    # row 7154 is NaN for solar_elevation and solar_azimuth
-    # I actually don't know why, just fillna with the mean for now
-    #X.fillna({"solar_elevation": X["solar_elevation"].mean(), "solar_azimuth": X["solar_azimuth"].mean()}, inplace=True)
-
     return X
 
 def create_interaction_features(X):
-    # Creating combined features
+    # Create combined features
     X["temp_irradiation"] = X["T2m"] * X["G(i)"]
     X["wind_irradiation"] = X["WS10m"] * X["G(i)"]
     return X
@@ -54,6 +50,8 @@ def create_features(df, feature_names):
         df = create_sun_position_features(df)
     if "interaction" in feature_names:
         df = create_interaction_features(df)
+    if "fourier" in feature_names:
+        df = create_fourier_features(df)  
     else:
-        raise ValueError("Unknown feature name, use 'time_based', 'lag', 'sun_position', or 'interaction'")
+        raise ValueError("Unknown feature name, use 'time_based', 'lag', 'sun_position', 'interaction' or 'fourier'")
     return df

@@ -1,10 +1,6 @@
 import xgboost as xgb
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error
-import pandas as pd
 import joblib
-import matplotlib.pyplot as plt
-from sklearn.model_selection import cross_val_score, KFold
+from sklearn.model_selection import cross_val_score
 import optuna
 
 def get_params(trial, param_list):
@@ -12,7 +8,6 @@ def get_params(trial, param_list):
     Function to extract the parameters with their respective parameter range from the param_list.
     Each trial of the HPO calls this function to pick values of the parameters for that specific trial.
     """
-
     param_dict = {}
 
     for param in param_list:
@@ -36,12 +31,14 @@ def get_params(trial, param_list):
     return param_dict
 
 
-def train_XGBoost(X_train, y_train, param_list, cv, scoring, n_trials, direction, save=False, save_path=None):
+def train_XGBoost(X_train, y_train, param_list, cv, scoring, n_trials, direction, random_state, save=False, save_path=None):
     """
+    Does a HPO with XGBoost models using the provided param_list.
+    Within the HPO a cross validation is done. The mean of all mean_average_errors from each fold of the cv is used to optimize the study, thus to find the best model.
+    After the HPO a model with the best found hyperparameters is newly initialized and trained on ALL training data.
     Only argument 'minimize' implemented for parameter 'direction'.
     """
     # drop time columns, because we don't want to use it in that format, instead we are using the features 'hour', 'day_of_year' and 'month'.
-    X_time = X_train["time"]
     X_train = X_train.drop(columns=["time"])
     y_train = y_train.drop(columns=["time"])
 
@@ -74,29 +71,10 @@ def train_XGBoost(X_train, y_train, param_list, cv, scoring, n_trials, direction
     best_params = study.best_params
 
     # Train model with the best found hyperparameters on the whole training set
-    best_model = xgb.XGBRegressor(**study.best_params, random_state=42)
+    best_model = xgb.XGBRegressor(**study.best_params, random_state=random_state)
     best_model.fit(X_train, y_train)
 
-    if test_size > 0.0:
-        y_pred = best_model.predict(X_test)
+    if save == True and save_path != None:
+        joblib.dump(best_model, "C:/Users/Brudo/solar_energy_forecast/models/xgboost_model.pkl")
 
-        mae = mean_absolute_error(y_test, y_pred)
-        print("MAE: ", mae)
-
-        results = pd.DataFrame(data={"y_test": y_test["energy"], "y_pred": y_pred.flatten()})
-        #print(results)
-
-        plt.plot(results["y_test"], label="y_test")
-        plt.plot(results["y_pred"], label="y_pred")
-        plt.show()
-    
-        if save == True and save_path != None:
-            joblib.dump(best_model, "C:/Users/Brudo/solar_energy_forecast/models/xgboost_model.pkl")
-
-        return best_model, best_params, y_pred, mae, cv_scores, study, X_time
-    
-    else:
-        if save == True and save_path != None:
-            joblib.dump(best_model, "C:/Users/Brudo/solar_energy_forecast/models/xgboost_model.pkl")
-
-        return best_model, best_params, cv_scores, study, X_time
+    return best_model, best_params, cv_scores, study
