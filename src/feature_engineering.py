@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 def create_time_based_features(X):
     X["hour"] = X["time"].dt.hour
@@ -10,11 +9,27 @@ def create_time_based_features(X):
     return X
 
 def create_lag_features(X):
+    X["T2m_lag_1h"] = X["T2m"].shift(1)
+    X["WS10m_lag_1h"] = X["WS10m"].shift(1)
+    X["T2m_lag_24h"] = X["T2m"].shift(24)
+    X["WS10m_lag_24h"] = X["WS10m"].shift(24)
+
+    X["T2m_lag_1h"] = X["T2m_lag_1h"].bfill()
+    X["WS10m_lag_1h"] = X["WS10m_lag_1h"].bfill()
+    X["T2m_lag_24h"] = X["T2m_lag_24h"].bfill()
+    X["WS10m_lag_24h"] = X["WS10m_lag_24h"].bfill()
+    return X
+
+def create_rolling_features(X):
+    X["T2m_rolling_3h"] = X["T2m"].rolling(3).mean()
+    X["WS10m_rolling_3h"] = X["WS10m"].rolling(3).mean()
     X["T2m_rolling_6h"] = X["T2m"].rolling(6).mean()
     X["WS10m_rolling_6h"] = X["WS10m"].rolling(6).mean()
+
+    X["T2m_rolling_3h"] = X["T2m_rolling_3h"].bfill()
+    X["WS10m_rolling_3h"] = X["WS10m_rolling_3h"].bfill()
     X["T2m_rolling_6h"] = X["T2m_rolling_6h"].bfill()
     X["WS10m_rolling_6h"] = X["WS10m_rolling_6h"].bfill()
-    return X
 
 def create_sun_position_features(X):
     from pvlib import solarposition
@@ -46,6 +61,8 @@ def create_features(df, feature_names):
         df = create_time_based_features(df)
     if "lag" in feature_names:
         df = create_lag_features(df)
+    if "rolling" in feature_names:
+        df = create_rolling_features(df)
     if "sun_position" in feature_names:
         df = create_sun_position_features(df)
     if "interaction" in feature_names:
@@ -53,5 +70,5 @@ def create_features(df, feature_names):
     if "fourier" in feature_names:
         df = create_fourier_features(df)  
     else:
-        raise ValueError("Unknown feature name, use 'time_based', 'lag', 'sun_position', 'interaction' or 'fourier'")
+        raise ValueError("Unknown feature name, use 'time_based', 'lag', 'rolling', 'sun_position', 'interaction' or 'fourier'")
     return df

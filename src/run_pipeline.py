@@ -1,5 +1,5 @@
 # Using weather data from Freiburg im Breisgau (City in the state of Baden-Württemberg in Germany) and energy data from the entire state
-# of Baden-Württemberg to train models. Then use weather data from Freiburg im Breisgau from a different time period to let the models predict
+# of Baden-Württemberg to train models. Then use weather data (that wasn't used for training) from Freiburg im Breisgau to let the models predict
 # the solar energy generation on. Finally evaluate their prediction using the solar energy generation for that time period of the entire
 # state of Baden-Württemberg. Meaning we use weather data from one location to predict the solar energy generation for an entire region,
 # which is not too great, but still an approximation that's worth looking into. 
@@ -21,8 +21,8 @@ np.random.seed(random_state) # Fixes NumPy's random behavior
 
 # STEP 2: Get training data
 # Pull it from APIs:
-hist_weather_data = pull_historical_weather_data(save=False, save_path=None, start_year=2018, end_year=2019)
-hist_energy_data, _ = pull_historical_energy_data(save=False, save_path=None, start_year=2018, end_year=2019)
+hist_weather_data = pull_historical_weather_data(save=False, save_path=None, start_year=2017, end_year=2019)
+hist_energy_data, _ = pull_historical_energy_data(save=False, save_path=None, start_year=2017, end_year=2019)
 # Or load it from local machine:
 #hist_weather_data = load_local_data(local_path="")
 #hist_energy_data = load_local_data(local_path="")
@@ -45,11 +45,24 @@ X_test = create_features(X_test, ["time_based", "lag", "sun_position", "interact
 
 # STEP 6: Provide param_list for HPO, do HPO, find best parameters, train model with best parameters on entire training data
 param_list = [("n_estimators", "int", 50, 200), ("learning_rate", "float", 0.01, 0.3), ("max_depth", "int", 3, 10), ("objective", "fixed", "reg:squarederror")]
-best_model, best_params, cv_scores, study = train_XGBoost(X_train=X_train, y_train=y_train, param_list=param_list, cv=3, scoring="neg_mean_absolute_error", n_trials=2, direction="minimize", random_state=random_state, save=False, save_path=None)
-
+best_model, best_params, cv_scores, study = train_XGBoost(X_train=X_train, y_train=y_train, param_list=param_list, cv=3, scoring="neg_mean_absolute_error", n_trials=10, direction="minimize", random_state=random_state, save=False, save_path=None)
 
 # STEP 7: Predict on X_test using the best_model and calculate metrics
 preds, preds_df, metrics_results = predict_evaluate(best_model, X_test, y_test, metrics=["mae", "mse", "rmse"])
 
 # STEP 8: Plot the data
+# training data
+plot_vertically(data_list=[y_train], label_list=["y_train"], window_size=24*30)
+# test data
 plot_vertically(data_list=[y_test, preds_df[["time", "energy predictions"]]], label_list=["y_test", "preds"], window_size=24*30)
+
+print("X_train head\n", X_train.head())
+print("X_test head\n", X_test.head())
+
+print(metrics_results)
+
+# 153.17876544161652
+# mae: 156.77368488773968
+
+# add baseline model
+# maybe add another visualization

@@ -33,9 +33,9 @@ def help_plot_vertically(ax, z, z_label, window_size):
 
         # use a rolling mean with window size of 24*30 = 24h * 30 days = 1 Month
         if "energy" in z.columns:
-            yearly_data["rolling_24h"] = yearly_data["energy"].rolling(window=window_size, min_periods=1).mean()
+            yearly_data[f"rolling_{window_size}h"] = yearly_data["energy"].rolling(window=window_size, min_periods=1).mean()
         elif "energy predictions" in z.columns:
-            yearly_data["rolling_24h"] = yearly_data["energy predictions"].rolling(window=window_size, min_periods=1).mean()
+            yearly_data[f"rolling_{window_size}h"] = yearly_data["energy predictions"].rolling(window=window_size, min_periods=1).mean()
         else:
             print("Couldn't find column 'energy' or 'energy predictions'")
 
@@ -43,8 +43,8 @@ def help_plot_vertically(ax, z, z_label, window_size):
         month_only = yearly_data["time"].dt.strftime("%m-%d")  # Format as 'MM-DD'
 
         # Plot each year separately
-        ax.scatter(month_only, yearly_data["rolling_24h"], label=f"{z_label} {year}", s=1)#, alpha=0.7, edgecolors="k")
-        #ax.plot(month_only, yearly_data["energy"], label=f"{year}", linewidth=0.2, alpha=0.8)#, alpha=0.7, edgecolors="k")
+        #ax.scatter(month_only, yearly_data["rolling_24h"], label=f"{z_label} {year}", s=1)#, alpha=0.7, edgecolors="k")
+        ax.plot(month_only, yearly_data[f"rolling_{window_size}h"], label=f"{z_label} {year}", linewidth=0.5)#, alpha=0.7, edgecolors="k")
 
 def plot_vertically(data_list, label_list, window_size):
 
@@ -65,7 +65,7 @@ def plot_vertically(data_list, label_list, window_size):
 
     plt.xlabel("Month")
     plt.ylabel("Energy in MWh")
-    plt.title("Solar Energy Generation Potentially Over Multiple Years")
+    plt.title(f"Solar Energy Generation using window of size: {window_size} hours")
     plt.legend()  # Use the legend to differentiate years
     plt.grid(True, which="both", linestyle="--", linewidth=0.5)
     plt.show()
