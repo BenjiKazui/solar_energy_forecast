@@ -8,6 +8,7 @@ from src.data_pulling import pull_historical_weather_data, pull_historical_energ
 from src.data_preprocessing import data_preprocessing
 from src.feature_engineering import create_features
 from src.model_training.train_XGBoost_model import train_XGBoost
+from src.model_training.train_Linear_regression_model import train_linear_regression
 from src.predict_and_evaluate import predict_evaluate
 from src.do_plotting import plot_vertically
 
@@ -45,21 +46,29 @@ X_test = create_features(X_test, ["time_based", "lag", "sun_position", "interact
 
 # STEP 6: Provide param_list for HPO, do HPO, find best parameters, train model with best parameters on entire training data
 param_list = [("n_estimators", "int", 50, 200), ("learning_rate", "float", 0.01, 0.3), ("max_depth", "int", 3, 10), ("objective", "fixed", "reg:squarederror")]
-best_model, best_params, cv_scores, study = train_XGBoost(X_train=X_train, y_train=y_train, param_list=param_list, cv=3, scoring="neg_mean_absolute_error", n_trials=10, direction="minimize", random_state=random_state, save=False, save_path=None)
+xgb_model, best_params, cv_scores, study = train_XGBoost(X_train=X_train, y_train=y_train, param_list=param_list, cv=3, scoring="neg_mean_absolute_error", n_trials=2, direction="minimize", random_state=random_state, save=False, save_path=None)
 
-# STEP 7: Predict on X_test using the best_model and calculate metrics
-preds, preds_df, metrics_results = predict_evaluate(best_model, X_test, y_test, metrics=["mae", "mse", "rmse"])
+lr_model = train_linear_regression(X_train, y_train, save=False, save_path=None)
+
+# STEP 7.1: Predict on X_test using a baseline model and calculate metrics
+lr_preds, lr_preds_df, lr_metrics_results = predict_evaluate(lr_model, X_test, y_test, metrics=["mae", "mse", "rmse"])
+
+# STEP 7.2: Predict on X_test using the best_model and calculate metrics
+xgb_preds, xgb_preds_df, xgb_metrics_results = predict_evaluate(xgb_model, X_test, y_test, metrics=["mae", "mse", "rmse"])
 
 # STEP 8: Plot the data
 # training data
 plot_vertically(data_list=[y_train], label_list=["y_train"], window_size=24*30)
-# test data
-plot_vertically(data_list=[y_test, preds_df[["time", "energy predictions"]]], label_list=["y_test", "preds"], window_size=24*30)
+# test data and lr predictions
+plot_vertically(data_list=[y_test, lr_preds_df[["time", "energy predictions"]]], label_list=["y_test", "preds"], window_size=24*30)
+# test data and xgb predictions
+plot_vertically(data_list=[y_test, xgb_preds_df[["time", "energy predictions"]]], label_list=["y_test", "preds"], window_size=24*30)
 
-print("X_train head\n", X_train.head())
-print("X_test head\n", X_test.head())
+#print("X_train head\n", X_train.head())
+#print("X_test head\n", X_test.head())
 
-print(metrics_results)
+print("lr metrics results:\n", lr_metrics_results)
+print("xgb metrics results:\n", xgb_metrics_results)
 
 # 153.17876544161652
 # mae: 156.77368488773968

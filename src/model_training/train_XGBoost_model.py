@@ -75,6 +75,7 @@ def train_XGBoost(X_train, y_train, param_list, cv, scoring, n_trials, direction
     best_model.fit(X_train, y_train)
 
     if save == True and save_path != None:
-        joblib.dump(best_model, "C:/Users/Brudo/solar_energy_forecast/models/xgboost_model.pkl")
+        joblib.dump(best_model, save_path)
+        print("XGBoost Model saved to: ", save_path)
 
     return best_model, best_params, cv_scores, study
