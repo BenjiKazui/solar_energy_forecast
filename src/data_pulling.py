@@ -195,9 +195,9 @@ def pull_future_weather_data(save=False, save_path=None):
     """
     Potentially we could also fetch a weather forecast and do predictions on that forecast.
     Pros: It's cool to try
-    Cons: It's really hard to interpret and get good results i think, because you are predicting (energy) on another prediction (weather)
-          Weather Prediction could be bad, then so is the energy prediction
-          Also, for evaluating the prediction, we would need to wait for time to pass in order to see the actual energy generation for that time period
+    Cons: It's really hard to interpret and get good results i think, because you are predicting (energy) on another prediction (weather).
+          Weather Prediction could be bad, then so is the energy prediction.
+          Also, for evaluating the prediction, we would need to wait for time to pass in order to see the actual energy generation for that time period.
           There is only roughly 14 days of weather predictions out there, and then those are actually not too accurate (I THINK), might need to look into it further
 
     Documentation: https://open-meteo.com/en/docs      

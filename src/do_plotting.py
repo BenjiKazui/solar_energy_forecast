@@ -46,7 +46,8 @@ def help_plot_vertically(ax, z, z_label, window_size):
         #ax.scatter(month_only, yearly_data["rolling_24h"], label=f"{z_label} {year}", s=1)#, alpha=0.7, edgecolors="k")
         ax.plot(month_only, yearly_data[f"rolling_{window_size}h"], label=f"{z_label} {year}", linewidth=0.5)#, alpha=0.7, edgecolors="k")
 
-def plot_vertically(data_list, label_list, window_size):
+
+def plot_vertically(data_type, data_list, label_list, window_size, save=False, save_path=None):
 
     if len(data_list) != len(label_list):
         print("Provide data_list and label_list with the corresponding data and labels, data_list and label_list must be same length.")
@@ -65,7 +66,46 @@ def plot_vertically(data_list, label_list, window_size):
 
     plt.xlabel("Month")
     plt.ylabel("Energy in MWh")
-    plt.title(f"Solar Energy Generation using window of size: {window_size} hours")
+    plt.title(f"Solar Energy Generation ({data_type}) using window of size: {window_size} hours")
     plt.legend()  # Use the legend to differentiate years
     plt.grid(True, which="both", linestyle="--", linewidth=0.5)
     plt.show()
+
+    if save == True and save_path != None:
+        fig.savefig(save_path, dpi=300, bbox_inches="tight")
+        print("Plot-Vertical-Figure saved to: ", save_path)
+
+
+def plot_zoomed_in_window(data_list, label_list, start_date, end_date, save=False, save_path=None):
+    """
+    Plot a zoomed-in window of the data between start_date and end_date.
+    """
+    fig, ax = plt.subplots(figsize=(12, 5))
+    
+    for i, data in enumerate(data_list):
+        data = data[(data["time"] >= start_date) & (data["time"] <= end_date)]
+        print("data after filtering:\n", data.head())
+        if "energy" in data.columns:
+            ax.plot(data["time"], data["energy"], label=label_list[i], linewidth=0.5)
+        elif "energy predictions" in data.columns:
+            ax.plot(data["time"], data["energy predictions"], label=label_list[i], linewidth=0.5)
+        else:
+            print("Couldn't find column 'energy' or 'energy predictions'")
+
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Energy in MWh")
+    ax.set_title(f"Zoomed-in view from {start_date} to {end_date}")
+    ax.legend() 
+    ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+
+    # Clean x-axis ticks
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d\n%H:%M"))
+    fig.autofmt_xdate()
+
+    plt.tight_layout()
+    plt.show()
+
+    if save == True and save_path != None:
+        fig.savefig(save_path, dpi=300, bbox_inches="tight")
+        print("Plot-Zoomed-In-Figure saved to: ", save_path)
