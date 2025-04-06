@@ -21,7 +21,7 @@ Weather data: https://joint-research-centre.ec.europa.eu/photovoltaic-geographic
 
 Solar energy data: https://github.com/bundesAPI/smard-api
 
-⚙️ Features & Workflow  
+⚙️ Workflow  
 Data ingestion and preprocessing
 
 Feature engineering (radiation, temperature, wind speed, time-based, sun position, lag and rolling mean)
