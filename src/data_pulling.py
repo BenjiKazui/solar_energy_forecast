@@ -85,7 +85,6 @@ def date_to_milliseconds(date_string):
     """
     Helper function to convert custom date (YYYY-MM-DD HH:MM:SS) to Unix timestamp in milliseconds
     """
-    #from datetime import datetime
     dt = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
     return int(dt.timestamp() * 1000)
 
@@ -175,8 +174,6 @@ def pull_historical_energy_data(save=False, save_path=None, start_year=None, end
                 "timestamp": timestamp,
                 "datetime": utc_date,
                 "value": value,
-                "version": metadata.get("version", ""),
-                "created": metadata.get("created", "")
             })
 
     df = pd.DataFrame(data_list)
@@ -193,12 +190,12 @@ def pull_historical_energy_data(save=False, save_path=None, start_year=None, end
 
 def pull_future_weather_data(save=False, save_path=None):
     """
-    Potentially we could also fetch a weather forecast and do predictions on that forecast.
-    Pros: It's cool to try
+    This is a starting point to use weather forecasts and do predictions on those forecasts.
+    Pros: It'd provide an actual value having a prediction of solar energy generation for the future.
     Cons: It's really hard to interpret and get good results i think, because you are predicting (energy) on another prediction (weather).
           Weather Prediction could be bad, then so is the energy prediction.
           Also, for evaluating the prediction, we would need to wait for time to pass in order to see the actual energy generation for that time period.
-          There is only roughly 14 days of weather predictions out there, and then those are actually not too accurate (I THINK), might need to look into it further
+          There is only roughly 14 days of weather predictions out there from what I have seen. There are longer weather forecasts, but how accurate are they?
 
     Documentation: https://open-meteo.com/en/docs      
     """

@@ -1,9 +1,10 @@
 import pandas as pd
 
+
 def data_preprocessing(hist_weather_data=None, hist_energy_data=None, future_weather_data=None):
     """
-    Shifts the time column of the weather data back by 10 minutes. From 00:10 to 00:00 for example. In order to have both timestamps use 0 for minutes.
-    Also filters the energy data, which includes more timestamps/data than the weather data, to use only the timestamps used in the weather_data.
+    Shifts the time column of the weather data back by 10 minutes. From 00:10 to 00:00 for example. In order to have both timestamps use 0 for the minute-timestamp.
+    Also filters the energy data, which includes more timestamps/data than the weather data, to use only the timestamps used in the weather data.
     Converts time columns to datetime format, drops unwanted columns and renames columns.
     """
 

@@ -1,14 +1,19 @@
 import pandas as pd
 import numpy as np
 
+
 def smape(y_test, preds):
     """
     Calculate symmetric mean absolute percentage error and using a small value (1e-10) to add to the denominator to avoid division by zero
     """
     return 100 / len(y_test) * np.sum(2 * np.abs(preds - y_test) / (np.abs(y_test) + np.abs(preds) + 1e-10))
 
-def predict_evaluate(model, X_test, y_test, metrics):
 
+def predict_evaluate(model, X_test, y_test, metrics):
+    """
+    Predict on X_test using the provided and trained model.
+    Afterwards calculate metrics.
+    """
     y_test = y_test.drop(columns=["time"])
     
     y_test = np.array(y_test).flatten()
@@ -16,10 +21,6 @@ def predict_evaluate(model, X_test, y_test, metrics):
     preds = model.predict(X_test.drop(columns=["time"]))
     preds = np.array(preds).flatten()
     assert preds.shape == y_test.shape, f"Shape mismatch: preds {preds.shape} vs y_test {y_test.shape}."
-
-    print(X_test["time"])
-    print(preds)
-    print(y_test)
 
     preds_df = pd.DataFrame(data={"time": X_test["time"], "energy predictions": preds, "true energy generation": y_test})
 

@@ -2,6 +2,10 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 def plot_chronological(y, final_preds_df):
+    """
+    Deprecated!
+    Used to plot data chronologically.
+    """
     fig, ax = plt.subplots()
     ax.plot(y.time, y.energy, label="Actual Energy")
     ax.plot(final_preds_df.time, final_preds_df.energy, label="Predicted Energy")
@@ -22,16 +26,16 @@ def plot_chronological(y, final_preds_df):
 
 
 def help_plot_vertically(ax, z, z_label, window_size):
+    """
+    Helper function to plot the data on a monthly basis.
+    """
     unique_years = z["time"].dt.year.unique()
 
     for year in unique_years:
         # Filter data for a single year
         yearly_data = z[z["time"].dt.year == year].copy()
         
-        # Use only energy data that has values != 0
-        #yearly_data = yearly_data[yearly_data["energy"] != 0]
-
-        # use a rolling mean with window size of 24*30 = 24h * 30 days = 1 Month
+        # Example: use a rolling mean with window size of 24*30 = 24h * 30 = 1 Month
         if "energy" in z.columns:
             yearly_data[f"rolling_{window_size}h"] = yearly_data["energy"].rolling(window=window_size, min_periods=1).mean()
         elif "energy predictions" in z.columns:
@@ -48,6 +52,9 @@ def help_plot_vertically(ax, z, z_label, window_size):
 
 
 def plot_vertically(data_type, data_list, label_list, window_size, save=False, save_path=None):
+    """
+    Plot the data 'vertically'. Showing the energy generation for each month of the year with the actual year of the data in the legend.
+    """
 
     if len(data_list) != len(label_list):
         print("Provide data_list and label_list with the corresponding data and labels, data_list and label_list must be same length.")
@@ -56,6 +63,7 @@ def plot_vertically(data_type, data_list, label_list, window_size, save=False, s
     fig, ax = plt.subplots()
 
     for i, data in enumerate(data_list):
+        # plot the data vertically
         help_plot_vertically(ax, data, label_list[i], window_size)
 
     # Set x-axis format to show months only
