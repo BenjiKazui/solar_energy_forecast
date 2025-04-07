@@ -16,7 +16,7 @@ def data_preprocessing(hist_weather_data=None, hist_energy_data=None, future_wea
     hist_weather_data["time"] = hist_weather_data["time"] - pd.Timedelta(minutes=10)
 
     # Drop unwanted columns and rename columns
-    hist_energy_data = hist_energy_data.drop(columns=["timestamp", "version", "created"])
+    hist_energy_data = hist_energy_data.drop(columns=["timestamp"])
     hist_energy_data = hist_energy_data.rename(columns={"datetime": "time", "value": "energy"})
     hist_energy_data["time"] = pd.to_datetime(hist_energy_data["time"])
 

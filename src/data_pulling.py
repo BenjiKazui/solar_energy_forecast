@@ -77,6 +77,7 @@ def pull_historical_weather_data(save=False, save_path=None, start_year=None, en
         # Save dataframe as pickle
         with open(save_path, "wb") as file:
             pickle.dump(df, file)
+            print(f"Saved dataframe as pickle to {save_path}")
 
     return df
 
@@ -182,6 +183,12 @@ def pull_historical_energy_data(save=False, save_path=None, start_year=None, end
     last_timestamp = df["datetime"].iloc[-1]
 
     print(f"Given the start_date {start_date} and end_date {end_date} the available timestamps are ranging from {first_timestamp} to {last_timestamp}")
+
+    if save == True and save_path != None:
+        # Save dataframe as pickle
+        with open(save_path, "wb") as file:
+            pickle.dump(df, file)
+            print(f"Saved dataframe as pickle to {save_path}")
 
     # The returned df (and all_data) includes data for the time interval of interest, but it also includes data outside of that time interval of interest
     # Matching the data properly is done in the next step in the pipeline with functions from data_preprocessing.py
