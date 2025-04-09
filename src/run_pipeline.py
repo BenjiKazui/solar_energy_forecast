@@ -45,8 +45,8 @@ X_test, y_test = data_preprocessing(hist_weather_test_data, hist_energy_test_dat
 
 
 # STEP 5: Create features
-X_train = create_features(X_train, ["time_based", "lag", "sun_position", "interaction", "fourier"])
-X_test = create_features(X_test, ["time_based", "lag", "sun_position", "interaction", "fourier"])
+X_train = create_features(X_train, ["PV_capacity", "time_based", "lag", "sun_position", "interaction", "fourier"])
+X_test = create_features(X_test, ["PV_capacity", "time_based", "lag", "sun_position", "interaction", "fourier"])
 
 
 # STEP 6.1: Train the baseline model (Linear Regression) on the entire training data and return that model
@@ -73,7 +73,8 @@ plot_vertically(data_type="train data", data_list=[y_train], label_list=["y_trai
 plot_vertically(data_type="model preds", data_list=[y_test, lr_preds_df[["time", "energy predictions"]], xgb_preds_df[["time", "energy predictions"]]], label_list=["y_test", "LR preds", "XGB preds"], window_size=24*30)
 
 # zooming in on one week in the summer and one week in the winter to see how the models perform in detail
-# Note: The zoomed-in plots are not smoothed using a rolling mean, so they show the actual data
+# Note: The zoomed-in plots are not smoothed or changed any other way, so they show the actual data
+plot_zoomed_in_window(data_list=[y_test, lr_preds_df[["time", "energy predictions"]], xgb_preds_df[["time", "energy predictions"]]], label_list=["y_test", "LR preds", "XGB preds"], start_date="2020-06-01", end_date="2020-07-01")
 plot_zoomed_in_window(data_list=[y_test, lr_preds_df[["time", "energy predictions"]], xgb_preds_df[["time", "energy predictions"]]], label_list=["y_test", "LR preds", "XGB preds"], start_date="2020-08-01", end_date="2020-08-08")
 plot_zoomed_in_window(data_list=[y_test, lr_preds_df[["time", "energy predictions"]], xgb_preds_df[["time", "energy predictions"]]], label_list=["y_test", "LR preds", "XGB preds"], start_date="2020-12-01", end_date="2020-12-08")
 
@@ -83,3 +84,20 @@ print("xgb metrics results:\n", xgb_metrics_results)
 # Plot vertically using a rolling mean with a big window size smoothes the data a lot and can potentially make us think the LR model is as good as or even better than the XGB model just by looking at the plot.
 # But if we zoom in on the actual data (no rolling mean or whatsoever), we can see that the XGB model is actually better than the LR model. The LR model predicts quite a lot of negative values, which is not possible in reality.
 # Also if we look at the metrics, we can see that the XGB model performs better than the LR model.
+
+# ToDo: Add visualizations, see https://github.com/ChrisBrown46/SolarEnergyPrediction/tree/master
+# Feature Importance
+# Also cut off the negative values in the predictions?
+# Future Improvements: Add feature for cloudiness
+"""
+lr metrics results:
+ {'mae': 219.80862622609786, 'mse': 114054.97395619411, 'rmse': 337.7202599137252}
+xgb metrics results:
+ {'mae': 157.4977050841131, 'mse': 88441.23725631427, 'rmse': 297.3907148118688}
+"""
+"""Using PV_Capacity:
+lr metrics results:
+ {'mae': 222.2723316338889, 'mse': 110203.48631297382, 'rmse': 331.96910445548065}
+xgb metrics results:
+ {'mae': 147.26115108210973, 'mse': 77739.42339380947, 'rmse': 278.817903646465}
+ """
