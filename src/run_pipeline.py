@@ -17,14 +17,14 @@ import numpy as np
 
 # STEP 1: Fix seeds to ensure reproducability
 random_state = 42
-random.seed(random_state) # Fixes Python's built-in random module
-np.random.seed(random_state) # Fixes NumPy's random behavior
+random.seed(random_state)
+np.random.seed(random_state)
 
 
 # STEP 2: Get training data
 # Pull it from APIs:
-hist_weather_data = pull_historical_weather_data(save=False, save_path=None, start_year=2019, end_year=2019)
-hist_energy_data, _ = pull_historical_energy_data(save=False, save_path=None, start_year=2019, end_year=2019)
+hist_weather_data = pull_historical_weather_data(save=False, save_path=None, start_year=2016, end_year=2019)
+hist_energy_data, _ = pull_historical_energy_data(save=False, save_path=None, start_year=2016, end_year=2019)
 # Or load it from local machine:
 #hist_weather_data = load_local_data(local_path="")
 #hist_energy_data = load_local_data(local_path="")
@@ -57,7 +57,7 @@ lr_model = train_linear_regression(X_train, y_train, save=False, save_path=None)
 # The param_list is a list of tuples, where each tuple contains the name of the parameter, the type of the parameter (int, float, fixed), and the range of values to search over.
 param_list = [("n_estimators", "int", 10, 200), ("learning_rate", "float", 0.01, 0.5), ("max_depth", "int", 3, 10), ("objective", "fixed", "reg:squarederror"),
               ("reg_lambda", "float", 0.0, 2.0), ("reg_alpha", "float", 0.0, 2.0), ("subsample", "fixed", 0.5), ("gamma", "float", 0.0, 2.0), ("verbosity", "fixed", 2)]
-xgb_model, best_params, cv_scores, study = train_XGBoost(X_train=X_train, y_train=y_train, param_list=param_list, cv=3, scoring="neg_mean_absolute_error", n_trials=2, direction="minimize", random_state=random_state, save=False, save_path=None)
+xgb_model, best_params, cv_scores, study = train_XGBoost(X_train=X_train, y_train=y_train, param_list=param_list, cv=3, scoring="neg_mean_absolute_error", n_trials=50, direction="minimize", random_state=random_state, save=False, save_path=None)
 
 
 # STEP 7.1: Predict on X_test using a baseline model and calculate metrics
@@ -89,19 +89,6 @@ print("xgb metrics results:\n", xgb_metrics_results)
 # But if we zoom in on the actual data (no rolling mean or whatsoever), we can see that the XGB model is actually better than the LR model. The LR model predicts quite a lot of negative values, which is not possible in reality.
 # Also if we look at the metrics, we can see that the XGB model performs better than the LR model.
 
-# ToDo: Add visualizations, see https://github.com/ChrisBrown46/SolarEnergyPrediction/tree/master
-# Feature Importance
+
 # Also cut off the negative values in the predictions?
 # Future Improvements: Add feature for cloudiness
-"""
-lr metrics results:
- {'mae': 219.80862622609786, 'mse': 114054.97395619411, 'rmse': 337.7202599137252}
-xgb metrics results:
- {'mae': 157.4977050841131, 'mse': 88441.23725631427, 'rmse': 297.3907148118688}
-"""
-"""Using PV_Capacity:
-lr metrics results:
- {'mae': 222.2723316338889, 'mse': 110203.48631297382, 'rmse': 331.96910445548065}
-xgb metrics results:
- {'mae': 147.26115108210973, 'mse': 77739.42339380947, 'rmse': 278.817903646465}
- """

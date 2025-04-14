@@ -125,7 +125,8 @@ def plot_feature_importances(model, model_name, feature_names, save=False, save_
     """
     import numpy as np
 
-    feature_names.remove("time")
+    if "time" in feature_names:
+        feature_names.remove("time")
     importances = model.feature_importances_
     indices = np.argsort(importances)[::-1]
 
