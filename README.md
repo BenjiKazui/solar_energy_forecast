@@ -16,7 +16,7 @@ This project aims to predict solar energy production in Baden-Württemberg (stat
 
 Although the weather data is only taken from a single city (Freiburg), it serves as a representative proxy for the entire state in this prototype.
 
-📊 Data Sources  
+📊 **Data Sources**  
 Weather data: https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis/getting-started-pvgis/api-non-interactive-service_en
 
 Solar energy data: https://github.com/bundesAPI/smard-api
@@ -30,10 +30,10 @@ Hyperparameter tuning via cross-validation
 
 Prediction and evaluation using unseen test data
 
-🚧 Limitations  
+🚧 **Limitations**  
 Weather input limited to Freiburg — not representative of all local variations across the state
 
-🧠 Future Improvements
+🧠 **Future Improvements**  
 Use weather forecasts to predict solar energy generation on
 
 Try alternative models (e.g. neural networks)
