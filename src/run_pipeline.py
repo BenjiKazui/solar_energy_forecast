@@ -10,7 +10,7 @@ from src.feature_engineering import create_features
 from src.model_training.train_XGBoost_model import train_XGBoost
 from src.model_training.train_Linear_regression_model import train_linear_regression
 from src.predict_and_evaluate import predict_evaluate
-from src.do_plotting import plot_vertically, plot_zoomed_in_window
+from src.do_plotting import plot_vertically, plot_zoomed_in_window, plot_feature_importances
 
 import random
 import numpy as np
@@ -23,8 +23,8 @@ np.random.seed(random_state) # Fixes NumPy's random behavior
 
 # STEP 2: Get training data
 # Pull it from APIs:
-hist_weather_data = pull_historical_weather_data(save=False, save_path=None, start_year=2017, end_year=2019)
-hist_energy_data, _ = pull_historical_energy_data(save=False, save_path=None, start_year=2017, end_year=2019)
+hist_weather_data = pull_historical_weather_data(save=False, save_path=None, start_year=2019, end_year=2019)
+hist_energy_data, _ = pull_historical_energy_data(save=False, save_path=None, start_year=2019, end_year=2019)
 # Or load it from local machine:
 #hist_weather_data = load_local_data(local_path="")
 #hist_energy_data = load_local_data(local_path="")
@@ -55,7 +55,8 @@ lr_model = train_linear_regression(X_train, y_train, save=False, save_path=None)
 # STEP 6.2: Provide param_list for HPO, do HPO, and find best parameters. Metric to optimize for HPO is the mean of the cross-validation scores.
 # Afterwards train the model with best hyperparameters on the entire training data and return that model.
 # The param_list is a list of tuples, where each tuple contains the name of the parameter, the type of the parameter (int, float, fixed), and the range of values to search over.
-param_list = [("n_estimators", "int", 50, 200), ("learning_rate", "float", 0.01, 0.3), ("max_depth", "int", 3, 10), ("objective", "fixed", "reg:squarederror")]
+param_list = [("n_estimators", "int", 10, 200), ("learning_rate", "float", 0.01, 0.5), ("max_depth", "int", 3, 10), ("objective", "fixed", "reg:squarederror"),
+              ("reg_lambda", "float", 0.0, 2.0), ("reg_alpha", "float", 0.0, 2.0), ("subsample", "fixed", 0.5), ("gamma", "float", 0.0, 2.0), ("verbosity", "fixed", 2)]
 xgb_model, best_params, cv_scores, study = train_XGBoost(X_train=X_train, y_train=y_train, param_list=param_list, cv=3, scoring="neg_mean_absolute_error", n_trials=2, direction="minimize", random_state=random_state, save=False, save_path=None)
 
 
@@ -77,6 +78,9 @@ plot_vertically(data_type="model preds", data_list=[y_test, lr_preds_df[["time",
 plot_zoomed_in_window(data_list=[y_test, lr_preds_df[["time", "energy predictions"]], xgb_preds_df[["time", "energy predictions"]]], label_list=["y_test", "LR preds", "XGB preds"], start_date="2020-06-01", end_date="2020-07-01")
 plot_zoomed_in_window(data_list=[y_test, lr_preds_df[["time", "energy predictions"]], xgb_preds_df[["time", "energy predictions"]]], label_list=["y_test", "LR preds", "XGB preds"], start_date="2020-08-01", end_date="2020-08-08")
 plot_zoomed_in_window(data_list=[y_test, lr_preds_df[["time", "energy predictions"]], xgb_preds_df[["time", "energy predictions"]]], label_list=["y_test", "LR preds", "XGB preds"], start_date="2020-12-01", end_date="2020-12-08")
+
+feature_names = X_train.columns.tolist()
+plot_feature_importances(xgb_model, "xgb_model", feature_names, save=False, save_path=None)
 
 print("lr metrics results:\n", lr_metrics_results)
 print("xgb metrics results:\n", xgb_metrics_results)

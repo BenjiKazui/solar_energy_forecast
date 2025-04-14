@@ -117,3 +117,27 @@ def plot_zoomed_in_window(data_list, label_list, start_date, end_date, save=Fals
     if save == True and save_path != None:
         fig.savefig(save_path, dpi=300, bbox_inches="tight")
         print("Plot-Zoomed-In-Figure saved to: ", save_path)
+
+
+def plot_feature_importances(model, model_name, feature_names, save=False, save_path=None):
+    """
+    Plot feature importances for the given model.
+    """
+    import numpy as np
+
+    feature_names.remove("time")
+    importances = model.feature_importances_
+    indices = np.argsort(importances)[::-1]
+
+    plt.figure(figsize=(12, 6))
+    plt.title(f"Feature Importances of {model_name}")
+    plt.bar(range(len(importances)), importances[indices], align="center")
+    plt.xticks(range(len(importances)), np.array(feature_names)[indices], rotation=90)
+    plt.xlim([-1, len(importances)])
+    plt.tight_layout()
+    
+    if save == True and save_path != None:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        print("Feature-Importances-Figure saved to: ", save_path)
+    
+    plt.show()
