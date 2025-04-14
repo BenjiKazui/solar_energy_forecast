@@ -26,8 +26,10 @@ np.random.seed(random_state)
 hist_weather_data = pull_historical_weather_data(save=False, save_path=None, start_year=2016, end_year=2019)
 hist_energy_data, _ = pull_historical_energy_data(save=False, save_path=None, start_year=2016, end_year=2019)
 # Or load it from local machine:
-#hist_weather_data = load_local_data(local_path="")
-#hist_energy_data = load_local_data(local_path="")
+# path to save or load the data locally
+#save_data_path = "C:/Users/Username/solar_energy_forecast/data/raw data/example 1/"
+#hist_weather_data = load_local_data(local_path=save_data_path + "hist_weather_train_data.pkl")
+#hist_energy_data = load_local_data(local_path=save_data_path + "hist_energy_train_data.pkl")
 
 
 # STEP 3: Get test data
@@ -35,8 +37,8 @@ hist_energy_data, _ = pull_historical_energy_data(save=False, save_path=None, st
 hist_weather_test_data = pull_historical_weather_data(save=False, save_path=None, start_year=2020, end_year=2020)
 hist_energy_test_data, _ = pull_historical_energy_data(save=False, save_path=None, start_year=2020, end_year=2020)
 # Or load it from local machine:
-#hist_weather_test_data = load_local_data(local_path="")
-#hist_energy_test_data = load_local_data(local_path="")
+#hist_weather_test_data = load_local_data(local_path=save_data_path + "hist_weather_test_data.pkl")
+#hist_energy_test_data = load_local_data(local_path=save_data_path + "hist_energy_test_data.pkl")
 
 
 # STEP 4: Data preprocessing
