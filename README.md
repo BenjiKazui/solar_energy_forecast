@@ -24,11 +24,17 @@ Solar energy data: https://github.com/bundesAPI/smard-api
 ⚙️ **Workflow**  
 Data ingestion and preprocessing
 
-Feature engineering (radiation, temperature, wind speed, time-based, sun position, lag and rolling mean)
+Feature engineering (radiation, temperature, wind speed, time-based, sun position, installed pv capacity, lag and rolling mean)
 
-Hyperparameter tuning via cross-validation
+Hyperparameter optimization via cross-validation
 
 Prediction and evaluation using unseen test data
+
+🛠️ **How to set this up**  
+Download the project  
+Create a new virtual environment for the project  
+Install the requirements from requirements.txt with pip like this "pip install -r requirements.txt"  
+In order to run the module src.run_pipeline as a script either navigate to the src folder, open a terminal and type "python -m src.run_pipeline" or type the same command within an IDE where you navigated to the project
 
 🚧 **Limitations**  
 Weather input limited to Freiburg — not representative of all local variations across the state
